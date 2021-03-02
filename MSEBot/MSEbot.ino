@@ -6,14 +6,20 @@
 #include "tasks.h"
 #include "scheduler.h"
 
+#define START_STATE ROTATING_TO_SEARCH_POINT
 
-#define WAITING 0
-#define SEARCHING 1
-#define DRIVING 2
-#define REVERSING 3
-#define FINISHED 4
+typedef enum {
+  WAITING,
+  ROTATING_TO_SEARCH_POINT,
+  DRIVING_TO_SEARCH_POINT,
+  SEARCHING,
+  DRIVING,
+  REVERSING,
+  FINISHED
+} State;
 
-uint8_t state = WAITING;
+
+State state = WAITING;
 
 size_t state_start_time = 0;
 
@@ -25,7 +31,7 @@ void toggle_button() {
   bool pressed = !digitalRead(PB1);
   if (pressed == true && pressed != prev_state) {
     if(state == WAITING) {
-      change_state(SEARCHING);
+      change_state(START_STATE);
     } else {
       change_state(WAITING);
     }
@@ -34,7 +40,7 @@ void toggle_button() {
   state_start_time = millis();
 }
 
-void change_state(uint8_t new_state) {
+void change_state(State new_state) {
   state = new_state;
   state_init = true;
   stopping = false;
@@ -88,6 +94,25 @@ void loop() {
       if(state_init) {
         state_init = false;
         stop();
+      }
+      break;
+    case ROTATING_TO_SEARCH_POINT: 
+      if(state_init) {
+        state_init = false;
+        spin(3, S_FORWARD);
+      }
+
+      if(stopped()) {
+        change_state(DRIVING_TO_SEARCH_POINT);
+      }
+      break;
+    case DRIVING_TO_SEARCH_POINT:
+      if(state_init) {
+        state_init = false;
+        drive_forward(100);
+      }
+      if(stopped()) {
+        change_state(SEARCHING);
       }
       break;
     case SEARCHING:
