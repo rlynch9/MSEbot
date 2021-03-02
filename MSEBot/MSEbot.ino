@@ -3,7 +3,6 @@
 #include "mseduino.h"
 #include "motors.h"
 #include "hall.h"
-#include "ir_detector.h"
 #include "tasks.h"
 #include "scheduler.h"
 
@@ -71,7 +70,6 @@ void setup() {
   setup_tasks();
   Serial.begin(115200);
   setup_halls(J13, J16);
-  setup_ir();
   pinMode(PB1, INPUT_PULLUP);
   add_task(&global, &print_debug, &print_debug_period, NULL);
   
