@@ -1,4 +1,7 @@
 
+// A convenience header which maps all the ESP32 pins
+// to the MSEduino pins
+
 #ifndef MSEDUINO_H
 #define MSEDUINO_H
 

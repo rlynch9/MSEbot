@@ -1,3 +1,5 @@
+// Defines and sets up the hall effect encoders on the wheels
+
 
 #ifndef HALL_H
 #define HALL_H
@@ -12,10 +14,12 @@ void reset_hall_ticks() {
   interrupts();
 }
 
+// Left hall interrupt
 void left_hall() {
   left_hall_ticks++;
 }
 
+// RIght hall interrupt
 void right_hall() {
   right_hall_ticks++;
 }

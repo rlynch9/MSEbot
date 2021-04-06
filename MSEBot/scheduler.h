@@ -1,4 +1,6 @@
 
+// A schedular helper to run tasks every so often
+
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 

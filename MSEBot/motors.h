@@ -32,9 +32,11 @@
 #define S_STOP 250
 #define S_CLIMB 250
 
-#define STOPPED 0
-#define FORWARD 1
-#define REVERSE 2
+typedef enum {
+  STOPPED,
+  FORWARD,
+  REVERSE
+} MotorState;
 
 typedef enum {
   CW, // Counterclockwise
@@ -45,13 +47,14 @@ typedef enum {
 
 size_t STOP_TIME = STOP_TIME_DEFAULT;
 
-uint8_t left_motor_state = STOPPED;
-uint8_t right_motor_state = STOPPED;
+MotorState left_motor_state = STOPPED;
+MotorState right_motor_state = STOPPED;
 
 uint8_t ticks_target = 0;
 
 uint8_t speed = 0;
 
+// Motor Setup
 void setup_motors() {
   ledcAttachPin(MOTOR_LEFT_A, LEFT_REVERSE);
   ledcAttachPin(MOTOR_LEFT_B, LEFT_FORWARD);
@@ -70,7 +73,8 @@ void setup_motors() {
   ledcSetup(CLIMB_REVERSE, 20000, 8);
 }
 
-uint8_t reverse_of(uint8_t dir) {
+// Get the reverse of the current motor direction
+MotorState reverse_of(MotorState dir) {
   switch (dir) {
     case STOPPED: return STOPPED;
     case FORWARD: return REVERSE;
@@ -78,15 +82,19 @@ uint8_t reverse_of(uint8_t dir) {
   }
 }
 
+// Start the climbing motor
 void climb() {
   ledcWrite(CLIMB_FORWARD, S_CLIMB);
 }
 
+// Stop the climbing motor
 void stop_climb() {
   ledcWrite(CLIMB_FORWARD, 0);
 }
 
-void start_drive(uint8_t left_dir, uint8_t right_dir, size_t ticks, uint8_t speed) {
+// Start driving the bot in the specified directions
+// for a certain number of hall ticks at a specified speed
+void start_drive(MotorState left_dir, MotorState right_dir, size_t ticks, uint8_t speed) {
   reset_hall_ticks();
   ticks_target = ticks;
   left_motor_state = left_dir;
@@ -99,7 +107,6 @@ void start_drive(uint8_t left_dir, uint8_t right_dir, size_t ticks, uint8_t spee
     case REVERSE:
       ledcWrite(LEFT_REVERSE, speed);
       break;
-    //default: break;
   }
   switch (right_dir) {
     case FORWARD: 
@@ -108,18 +115,21 @@ void start_drive(uint8_t left_dir, uint8_t right_dir, size_t ticks, uint8_t spee
     case REVERSE:
       ledcWrite(RIGHT_REVERSE, speed);
       break;
-    //default: break;
   }
 }
 
+// Drive forward so many hall ticks
 void drive_forward(size_t ticks) {
   start_drive(FORWARD, FORWARD, ticks, S_FORWARD);
 }
 
+// Reverse so many hall ticks
 void reverse(size_t ticks) {
   start_drive(REVERSE, REVERSE, ticks, S_REVERSE);
 }
 
+// Spin the robot in the specified direction
+// at a specific speed for so many hall ticks
 void spin(size_t ticks, uint8_t speed, Rotation rot) {
   if(rot == CCW) {
     start_drive(REVERSE, FORWARD, ticks, speed);
@@ -128,6 +138,7 @@ void spin(size_t ticks, uint8_t speed, Rotation rot) {
   }
 }
 
+// Check to see if the robot is stopped
 bool stopped() {
   return left_motor_state == STOPPED && right_motor_state == STOPPED;
 }
@@ -135,6 +146,7 @@ bool stopped() {
 size_t stop_time = 0;
 bool stopping = false;
 
+// Stop the driving motors
 void stop_motors() {
   ledcWrite(LEFT_FORWARD, 0);
   ledcWrite(LEFT_REVERSE, 0);
@@ -145,6 +157,7 @@ void stop_motors() {
   right_motor_state = STOPPED;
 }
 
+// Stop the robot by quickly reversing the motors
 void stop() {
 
   reset_hall_ticks();
@@ -156,8 +169,8 @@ void stop() {
   stopping = true;
   stop_time = millis() + STOP_TIME;
 
-  uint8_t left_dir = reverse_of(left_motor_state);
-  uint8_t right_dir = reverse_of(right_motor_state);
+  MotorState left_dir = reverse_of(left_motor_state);
+  MotorState right_dir = reverse_of(right_motor_state);
 
   left_motor_state = left_dir;
   right_motor_state = right_dir;
@@ -180,6 +193,9 @@ void stop() {
   }
 }
 
+// The drive maintence function
+// when the robot drives enough hall ticks
+// this function will stop the robot
 void drive() {
   
   if(left_motor_state == STOPPED && right_motor_state == STOPPED) {

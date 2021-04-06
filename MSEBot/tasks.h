@@ -18,6 +18,8 @@ Task task_list[10];
 size_t last_ir_read = 0;
 size_t clear_ir_period = 400;
 uint8_t ir_state = IR_NO_SIGNAL;
+
+// Invalidates the ir signal if enough time has passed
 void clear_ir() {
   if(millis() - last_ir_read > 200) {
     ir_state = IR_NO_SIGNAL;
@@ -26,6 +28,8 @@ void clear_ir() {
 
 size_t blink_led_period = 500;
 bool led_on = false;
+
+// Blinks the robots led as a heartbeat
 void blink_led() {
   if(led_on) {
     digitalWrite(BRDLED, LOW);
@@ -54,6 +58,7 @@ void run_tasks() {
   run_scheduler(&global);
 }
 
+// Reads the ir beacon
 void read_ir() {
   int8_t ir = Serial2.read();
   if(ir == 'U') {

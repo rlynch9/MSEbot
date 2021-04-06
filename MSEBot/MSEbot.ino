@@ -20,13 +20,12 @@
     J28     4     Left Motor 2
     J29     2     Climbing Motor 1
     J30     15    Climbing Motor 2
-
 */
 
 #define LIMIT_SWITCH J19
 
-#define START_STATE TURN1
-
+// The states that the bot can be in
+// Can be changed through the `change_state` function
 typedef enum {
   WAITING,
   TURN1, // First turn Cw
@@ -40,15 +39,17 @@ typedef enum {
 
 } State;
 
+// The state the robot starts at when the start button is pushed
+#define START_STATE TURN1
 
 State state = WAITING;
 
+// Constants to correctly get the toggle button behaviour
 size_t state_start_time = 0;
-
 bool prev_state = false;
-
 bool state_init = false;
 
+// Toggle the robot on and off when `PB1` is pressed
 void toggle_button() {
   bool pressed = !digitalRead(PB1);
   if (pressed == true && pressed != prev_state) {
@@ -62,6 +63,8 @@ void toggle_button() {
   state_start_time = millis();
 }
 
+// Move the robot into a new state
+// Has all the setup logic required
 void change_state(State new_state) {
   state = new_state;
   state_init = true;
@@ -90,8 +93,12 @@ void loop() {
   read_ir();
   toggle_button();
 
+  // The main robot logic
   switch(state) {
+    // Do nothing if the robot is waiting
     case WAITING: break;
+
+    // First turns the robot 90 degrees to the right
     case TURN1: 
       if(state_init) {
         spin(5, S_SPIN, CW);
@@ -100,6 +107,8 @@ void loop() {
       if(stopped()) {
         change_state(DRIVE1);
       }
+
+    // Drives the robot far enough out to avoid the box
     case DRIVE1:
       if(state_init) {
         drive_forward(30);
@@ -108,6 +117,8 @@ void loop() {
       if(stopped()) {
         change_state(TURN2);
       }
+
+    // Turn the robot 90 degrees to the left to get around the box
     case TURN2:
       if(state_init) {
         spin(9, S_SPIN, CCW);
@@ -116,6 +127,8 @@ void loop() {
       if(stopped()) {
         change_state(DRIVE2);
       }
+
+    // Drive the robot to the position to search for the IR Beacon
     case DRIVE2:
       if(state_init) {
         drive_forward(70);
@@ -125,6 +138,8 @@ void loop() {
         change_state(WAITING);
       }
       break;
+    
+    // Look for the IR beacon
     case SEARCHING:
       if(state_init) {
         state_init = false;
@@ -147,6 +162,7 @@ void loop() {
       }
       break;
     
+    // Drive towards the IR beacon
     case DRIVE3:
       if(state_init) {
         drive_forward(100);
@@ -168,6 +184,8 @@ void loop() {
         change_state(WAITING);
       }
       break;
+    
+    // Climb the rope
     case CLIMBING: 
       if(state_init) {
         climb();
@@ -179,6 +197,9 @@ void loop() {
         change_state(HANGING);
       }
       break;
+
+    // Stay at the top of the rope
+    // If the limit switch is no longer pressed start climbing again
     case HANGING:
       if(state_init) {
         state_init = false;
