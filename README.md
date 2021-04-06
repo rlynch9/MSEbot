@@ -1,5 +1,5 @@
 
-#### MSEbot
+# MSEbot
 
-The branch tagged `v1` is the code for the first task,
-the main branch is the code for the second task.
+The code for the MSEBot to find a climb up a rope using the 
+IR beacon to find the rope.
