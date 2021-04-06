@@ -6,16 +6,38 @@
 #include "tasks.h"
 #include "scheduler.h"
 
-#define START_STATE ROTATING_TO_SEARCH_POINT
+/*  PINS
+    MSE     ESP   Device
+    J11     16    IR Reciever
+    J12     17    Left Hall 1
+    J13     5     Left Hall 2
+    J16     13    Right Hall 1
+    J18     14    Right Hall 2
+    J19     27    Limit Switch
+    J24     12    Left Motor 1
+    J25     19    Left Motor 2
+    J26     18    Right Motor 1
+    J28     4     Left Motor 2
+    J29     2     Climbing Motor 1
+    J30     15    Climbing Motor 2
+
+*/
+
+#define LIMIT_SWITCH J19
+
+#define START_STATE TURN1
 
 typedef enum {
   WAITING,
-  ROTATING_TO_SEARCH_POINT,
-  DRIVING_TO_SEARCH_POINT,
-  SEARCHING,
-  DRIVING,
-  REVERSING,
-  FINISHED
+  TURN1, // First turn Cw
+  DRIVE1, // First drive
+  TURN2, // Second turn CCw
+  DRIVE2, // Second drive
+  SEARCHING, // Find the IR beacon
+  DRIVE3, // Drive to the IR Beacon
+  CLIMBING,
+  HANGING
+
 } State;
 
 
@@ -48,27 +70,6 @@ void change_state(State new_state) {
   stop_motors();
 }
 
-size_t print_debug_period = 500;
-void print_debug() {
-  Serial.print("\n\nBot State: ");
-  Serial.println(state);
-  Serial.print("Drive State (L, R): ");
-  Serial.print(left_motor_state);
-  Serial.print(", ");
-  Serial.println(right_motor_state);
-  Serial.print("Halls (L, R): ");
-  Serial.print(left_hall_ticks);
-  Serial.print(", ");
-  Serial.println(right_hall_ticks);
-  Serial.print("Stopped? ");
-  Serial.println(stopped());
-  Serial.print("IR State: ");
-  Serial.write(ir_state);
-  Serial.println();
-  
-
-}
-
 void setup() {
   pinMode(BRDLED, OUTPUT);
   
@@ -77,8 +78,8 @@ void setup() {
   Serial.begin(115200);
   setup_halls(J13, J16);
   pinMode(PB1, INPUT_PULLUP);
-  add_task(&global, &print_debug, &print_debug_period, NULL);
-  
+
+  pinMode(LIMIT_SWITCH, INPUT);
 }
 
 bool found_ir = false;
@@ -89,30 +90,39 @@ void loop() {
   read_ir();
   toggle_button();
 
-  switch (state) {
-    case WAITING: 
+  switch(state) {
+    case WAITING: break;
+    case TURN1: 
       if(state_init) {
+        spin(5, S_SPIN, CW);
         state_init = false;
-        stop();
-      }
-      break;
-    case ROTATING_TO_SEARCH_POINT: 
-      if(state_init) {
-        state_init = false;
-        spin(3, S_FORWARD);
-      }
-
-      if(stopped()) {
-        change_state(DRIVING_TO_SEARCH_POINT);
-      }
-      break;
-    case DRIVING_TO_SEARCH_POINT:
-      if(state_init) {
-        state_init = false;
-        drive_forward(100);
       }
       if(stopped()) {
-        change_state(SEARCHING);
+        change_state(DRIVE1);
+      }
+    case DRIVE1:
+      if(state_init) {
+        drive_forward(30);
+        state_init = false;
+      }
+      if(stopped()) {
+        change_state(TURN2);
+      }
+    case TURN2:
+      if(state_init) {
+        spin(9, S_SPIN, CCW);
+        state_init = false;
+      }
+      if(stopped()) {
+        change_state(DRIVE2);
+      }
+    case DRIVE2:
+      if(state_init) {
+        drive_forward(70);
+        state_init = false;
+      }
+      if(stopped()) {
+        change_state(WAITING);
       }
       break;
     case SEARCHING:
@@ -123,24 +133,21 @@ void loop() {
       }
 
       if(stopped() && !found_ir) {
-        spin(1, S_SEARCH);
+        spin(1, S_SEARCH, CW);
       }
 
       if(ir_state == IR_SIGNAL_U && !stopping) {
         stop();
         found_ir = true;
       }
-      if(ir_state == IR_SIGNAL_A) {
-        change_state(REVERSING);
-      }
       if(stopped() && found_ir) {
-        change_state(DRIVING);
+        change_state(DRIVE3);
         STOP_TIME = STOP_TIME_DEFAULT;
         found_ir = false;
       }
       break;
     
-    case DRIVING:
+    case DRIVE3:
       if(state_init) {
         drive_forward(100);
         state_init = false;
@@ -158,27 +165,26 @@ void loop() {
         break;
       }
       if(ir_state == IR_SIGNAL_A) {
-        change_state(REVERSING);
-      }
-      break;
-
-    case REVERSING:
-      if(state_init) {
-        reverse(50);
-        state_init = false;
-      }
-      if(stopped()) {
-        change_state(FINISHED);
-      }
-      break;
-
-    case FINISHED:
-      if(state_init) {
-        spin(50, 200);
-        state_init = false;
-      }
-      if(stopped()) {
         change_state(WAITING);
+      }
+      break;
+    case CLIMBING: 
+      if(state_init) {
+        climb();
+        state_init = false;
+      }
+
+      if(digitalRead(LIMIT_SWITCH == HIGH)) {
+        stop_climb();
+        change_state(HANGING);
+      }
+      break;
+    case HANGING:
+      if(state_init) {
+        state_init = false;
+      }
+      if(digitalRead(LIMIT_SWITCH) == LOW) {
+        change_state(CLIMBING);
       }
       break;
   }
