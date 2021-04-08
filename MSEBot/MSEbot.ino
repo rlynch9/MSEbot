@@ -13,7 +13,8 @@
     J13     5     Left Hall 2
     J16     13    Right Hall 1
     J18     14    Right Hall 2
-    J19     27    Limit Switch
+    J19     27    PB1
+    J20     27    Limit Switch
     J24     12    Left Motor 1
     J25     19    Left Motor 2
     J26     18    Right Motor 1
@@ -22,7 +23,7 @@
     J30     15    Climbing Motor 2
 */
 
-#define LIMIT_SWITCH J19
+#define LIMIT_SWITCH J20
 
 // The states that the bot can be in
 // Can be changed through the `change_state` function
@@ -74,11 +75,10 @@ void change_state(State new_state) {
 }
 
 void setup() {
+  Serial.begin(115200);
   pinMode(BRDLED, OUTPUT);
-  
   setup_motors();
   setup_tasks();
-  Serial.begin(115200);
   setup_halls(J13, J16);
   pinMode(PB1, INPUT_PULLUP);
 
@@ -135,7 +135,7 @@ void loop() {
         state_init = false;
       }
       if(stopped()) {
-        change_state(WAITING);
+        change_state(SEARCHING);
       }
       break;
     
@@ -181,7 +181,7 @@ void loop() {
         break;
       }
       if(ir_state == IR_SIGNAL_A) {
-        change_state(WAITING);
+        change_state(CLIMBING);
       }
       break;
     
@@ -190,11 +190,13 @@ void loop() {
       if(state_init) {
         climb();
         state_init = false;
+        Serial.println("Climbing");
       }
 
       if(digitalRead(LIMIT_SWITCH == HIGH)) {
         stop_climb();
         change_state(HANGING);
+        Serial.println("At top");
       }
       break;
 

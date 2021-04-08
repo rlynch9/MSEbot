@@ -14,16 +14,16 @@
 #define MOTOR_RIGHT_A J25
 #define MOTOR_RIGHT_B J24
 
-#define CLIMB_MOTOR_A J29
-#define CLIMB_MOTOR_B J30
+#define CLIMB_MOTOR_A J22
+#define CLIMB_MOTOR_B J21
 
 #define LEFT_REVERSE 1
 #define LEFT_FORWARD 2
 #define RIGHT_FORWARD 3
 #define RIGHT_REVERSE 4
 
-#define CLIMB_FORWARD 8
-#define CLIMB_REVERSE 9
+#define CLIMB_FORWARD 5
+#define CLIMB_REVERSE 6
 
 #define S_FORWARD 225
 #define S_SPIN 175
