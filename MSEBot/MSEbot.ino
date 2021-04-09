@@ -19,8 +19,8 @@
     J25     19    Left Motor 2
     J26     18    Right Motor 1
     J28     4     Left Motor 2
-    J29     2     Climbing Motor 1
-    J30     15    Climbing Motor 2
+    J21     23    Climbing Motor 1
+    J22     25    Climbing Motor 2
 */
 
 #define LIMIT_SWITCH J20
