@@ -18,7 +18,7 @@
     J24     12    Left Motor 1
     J25     19    Left Motor 2
     J26     18    Right Motor 1
-    J28     4     Left Motor 2
+    J28     4     Right Motor 2
     J21     23    Climbing Motor 1
     J22     25    Climbing Motor 2
 */
